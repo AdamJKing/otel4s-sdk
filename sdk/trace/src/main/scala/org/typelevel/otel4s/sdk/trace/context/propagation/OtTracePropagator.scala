@@ -29,6 +29,11 @@ import org.typelevel.otel4s.trace.TraceFlags
 import org.typelevel.otel4s.trace.TraceState
 import scodec.bits.ByteVector
 
+/** @deprecated
+  *   the OT trace propagation format is deprecated in the OpenTelemetry specification (see
+  *   [[https://github.com/open-telemetry/opentelemetry-specification/pull/4851]]). Please use
+  *   [[W3CTraceContextPropagator]] instead.
+  */
 private final class OtTracePropagator extends TextMapPropagator[Context] {
 
   import OtTracePropagator.Headers
@@ -145,6 +150,15 @@ object OtTracePropagator {
   }
 
   /** Returns an instance of the OtTracePropagator.
+    *
+    * @deprecated
+    *   the OT trace propagation format is deprecated in the OpenTelemetry specification (see
+    *   [[https://github.com/open-telemetry/opentelemetry-specification/pull/4851]]). Please use
+    *   [[W3CTraceContextPropagator]] instead.
     */
+  @deprecated(
+    "The OT trace propagation format is deprecated in the OpenTelemetry specification. Please use W3CTraceContextPropagator instead.",
+    "0.16.1"
+  )
   def default: TextMapPropagator[Context] = Default
 }

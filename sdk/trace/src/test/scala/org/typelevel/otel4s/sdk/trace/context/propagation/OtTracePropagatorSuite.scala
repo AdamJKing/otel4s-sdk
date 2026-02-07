@@ -30,6 +30,7 @@ import scodec.bits.ByteVector
 
 class OtTracePropagatorSuite extends ScalaCheckSuite {
 
+  @annotation.nowarn("cat=deprecation")
   private val propagator = OtTracePropagator.default
 
   test("fields") {
