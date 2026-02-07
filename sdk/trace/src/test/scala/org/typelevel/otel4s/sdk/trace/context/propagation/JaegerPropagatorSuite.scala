@@ -29,6 +29,7 @@ import java.net.URLEncoder
 
 class JaegerPropagatorSuite extends ScalaCheckSuite {
 
+  @annotation.nowarn("cat=deprecation")
   private val propagator = JaegerPropagator.default
 
   //

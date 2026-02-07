@@ -54,6 +54,7 @@ private final class ContextPropagatorsAutoConfigure[F[_]: MonadCancelThrow](
   import ContextPropagatorsAutoConfigure.Const
   import ContextPropagatorsAutoConfigure.Default
 
+  @annotation.nowarn("cat=deprecation")
   private val configurers = {
     val default: Set[AutoConfigure.Named[F, TextMapPropagator[Context]]] = Set(
       AutoConfigure.Named.const("none", TextMapPropagator.noop),

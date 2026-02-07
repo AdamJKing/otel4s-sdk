@@ -38,6 +38,11 @@ import scala.util.control.NonFatal
   *
   * @see
   *   [[https://www.jaegertracing.io/docs/client-libraries/#propagation-format]]
+  *
+  * @deprecated
+  *   the Jaeger trace propagation format is deprecated in the OpenTelemetry specification (see
+  *   [[https://github.com/open-telemetry/opentelemetry-specification/pull/4827]]). Please use
+  *   [[W3CTraceContextPropagator]] instead.
   */
 private final class JaegerPropagator extends TextMapPropagator[Context] {
   import JaegerPropagator.Const
@@ -204,7 +209,16 @@ object JaegerPropagator {
   }
 
   /** Returns an instance of the JaegerPropagator.
+    *
+    * @deprecated
+    *   the Jaeger trace propagation format is deprecated in the OpenTelemetry specification (see
+    *   [[https://github.com/open-telemetry/opentelemetry-specification/pull/4827]]). Please use
+    *   [[W3CTraceContextPropagator]] instead.
     */
+  @deprecated(
+    "The Jaeger trace propagation format is deprecated in the OpenTelemetry specification. Please use W3CTraceContextPropagator instead.",
+    "0.16.1"
+  )
   def default: TextMapPropagator[Context] = Default
 
 }
