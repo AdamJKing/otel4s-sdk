@@ -1,9 +1,9 @@
-# Testkit
+# Testing with testkit
 
-The `otel4s-sdk-testkit` provides in-memory implementations of metric and trace exporters.
+The `otel4s-sdk-testkit` provides in-memory implementations of metric, trace, and log exporters.
 In-memory data can be used to test the structure of the spans, the names of instruments, and many more.
 
-The testkit is framework-agnostic, so it can be used with any test framework, such as weaver, munit, scalatest.
+The testkit is framework-agnostic, so it can be used with any test framework, such as weaver, munit, or scalatest.
 
 ## Getting started
 
@@ -14,9 +14,7 @@ The testkit is framework-agnostic, so it can be used with any test framework, su
 Add settings to the `build.sbt`:
 
 ```scala
-libraryDependencies ++= Seq(
-  "org.typelevel" %%% "otel4s-sdk-testkit" % "@VERSION@" % Test, // <1>
-)
+libraryDependencies += "org.typelevel" %%% "otel4s-sdk-testkit" % "@VERSION@" % Test // <1>
 ```
 
 @:choice(scala-cli)
@@ -123,7 +121,7 @@ associated attributes, collection time window, and so on.
 
 It's hard to implement an assertion that verifies **all** aspects of the metric 
 because many things must be considered, such as time window, attributes, exemplars, etc.
-To simplify the testing process, we can define a minimized projection of `MetricData` such as `TelemetryMetric`. 
+To simplify the testing process, we define a minimized projection of `MetricData`, named `TelemetryMetric`. 
 
 ```scala mdoc:invisible
 // we silently run the test to ensure it's actually correct
@@ -257,7 +255,7 @@ name, instrumentation scope, telemetry resource, associated attributes, time win
 
 It's difficult to implement an assertion that verifies **all** aspects of the span 
 because many things must be considered, such as time windows, attributes, etc. 
-To simplify the testing process, we can define a minimized projection of `SpanData`, such as `TelemetrySpan`.
+To simplify the testing process, we define a minimized projection of `SpanData`, named `TelemetrySpan`.
 
 ```scala mdoc:invisible
 // we silently run the test to ensure it's actually correct
