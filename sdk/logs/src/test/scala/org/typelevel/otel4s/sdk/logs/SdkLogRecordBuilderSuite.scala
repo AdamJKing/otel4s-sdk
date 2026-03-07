@@ -32,9 +32,11 @@ import org.typelevel.otel4s.sdk.logs.data.LogRecordData
 import org.typelevel.otel4s.sdk.logs.exporter.InMemoryLogRecordExporter
 import org.typelevel.otel4s.sdk.logs.processor.SimpleLogRecordProcessor
 import org.typelevel.otel4s.sdk.logs.scalacheck.Arbitraries._
+import org.typelevel.otel4s.semconv.attributes.ExceptionAttributes
 
 import scala.concurrent.duration._
 import scala.util.chaining._
+import scala.util.control.NoStackTrace
 
 class SdkLogRecordBuilderSuite extends CatsEffectSuite with ScalaCheckEffectSuite {
 
@@ -115,6 +117,69 @@ class SdkLogRecordBuilderSuite extends CatsEffectSuite with ScalaCheckEffectSuit
         assertEquals(log.instrumentationScope, logRecordData.instrumentationScope)
         assertEquals(log.resource, logRecordData.resource)
       }
+    }
+  }
+
+  test("withException adds exception attributes") {
+    val exception = new RuntimeException("This is fine")
+
+    for {
+      exporter <- InMemoryLogRecordExporter.create[IO](None)
+      processor = SimpleLogRecordProcessor(exporter)
+      builder = SdkLogRecordBuilder.empty[IO](
+        processor = processor,
+        instrumentationScope = InstrumentationScope.builder("scope").build,
+        resource = TelemetryResource.default,
+        traceContextLookup = TraceContext.Lookup.noop,
+        limits = LogRecordLimits.default
+      )
+      _ <- builder.withException(exception).emit
+      logs <- exporter.finishedLogs
+    } yield {
+      assertEquals(logs.length, 1)
+      val attrs = logs.head.attributes.elements
+
+      assertEquals(
+        attrs.get(ExceptionAttributes.ExceptionType).map(_.value),
+        Some(exception.getClass.getName)
+      )
+      assertEquals(
+        attrs.get(ExceptionAttributes.ExceptionMessage).map(_.value),
+        Some(exception.getMessage)
+      )
+      assert(
+        attrs
+          .get(ExceptionAttributes.ExceptionStacktrace)
+          .exists(_.value.startsWith(s"${exception.getClass.getName}: ${exception.getMessage}"))
+      )
+    }
+  }
+
+  test("withException omits null message and empty stacktrace") {
+    val exception = new RuntimeException with NoStackTrace
+
+    for {
+      exporter <- InMemoryLogRecordExporter.create[IO](None)
+      processor = SimpleLogRecordProcessor(exporter)
+      builder = SdkLogRecordBuilder.empty[IO](
+        processor = processor,
+        instrumentationScope = InstrumentationScope.builder("scope").build,
+        resource = TelemetryResource.default,
+        traceContextLookup = TraceContext.Lookup.noop,
+        limits = LogRecordLimits.default
+      )
+      _ <- builder.withException(exception).emit
+      logs <- exporter.finishedLogs
+    } yield {
+      assertEquals(logs.length, 1)
+      val attrs = logs.head.attributes.elements
+
+      assertEquals(
+        attrs.get(ExceptionAttributes.ExceptionType).map(_.value),
+        Some(exception.getClass.getName)
+      )
+      assertEquals(attrs.get(ExceptionAttributes.ExceptionMessage), None)
+      assertEquals(attrs.get(ExceptionAttributes.ExceptionStacktrace), None)
     }
   }
 
