@@ -32,7 +32,10 @@ import org.typelevel.otel4s.sdk.context.TraceContext
 import org.typelevel.otel4s.sdk.data.LimitedData
 import org.typelevel.otel4s.sdk.logs.data.LogRecordData
 import org.typelevel.otel4s.sdk.logs.processor.LogRecordProcessor
+import org.typelevel.otel4s.semconv.attributes.ExceptionAttributes
 
+import java.io.PrintWriter
+import java.io.StringWriter
 import java.time.Instant
 import scala.collection.immutable
 import scala.concurrent.duration._
@@ -72,6 +75,9 @@ private final case class SdkLogRecordBuilder[F[_]: Temporal: AskContext](
   def withEventName(eventName: String): LogRecordBuilder[F, Context] =
     copy(state = state.copy(eventName = Some(eventName)))
 
+  def withException(exception: Throwable): LogRecordBuilder[F, Context] =
+    copy(state = state.copy(attributes = state.attributes.appendAll(exceptionAttributes(exception))))
+
   def addAttribute[A](attribute: Attribute[A]): LogRecordBuilder[F, Context] =
     copy(state = state.copy(attributes = state.attributes.append(attribute)))
 
@@ -102,6 +108,27 @@ private final case class SdkLogRecordBuilder[F[_]: Temporal: AskContext](
       instrumentationScope = instrumentationScope,
       resource = resource
     )
+
+  private def exceptionAttributes(exception: Throwable): Attributes = {
+    val builder = Attributes.newBuilder
+
+    builder.addOne(ExceptionAttributes.ExceptionType, exception.getClass.getName)
+
+    val message = exception.getMessage
+    if (message != null) {
+      builder.addOne(ExceptionAttributes.ExceptionMessage, message)
+    }
+
+    if (exception.getStackTrace.nonEmpty) {
+      val stringWriter = new StringWriter()
+      val printWriter = new PrintWriter(stringWriter)
+      exception.printStackTrace(printWriter)
+
+      builder.addOne(ExceptionAttributes.ExceptionStacktrace, stringWriter.toString)
+    }
+
+    builder.result()
+  }
 }
 
 private object SdkLogRecordBuilder {
