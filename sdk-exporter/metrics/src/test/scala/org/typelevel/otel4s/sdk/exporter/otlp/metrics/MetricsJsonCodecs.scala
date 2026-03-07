@@ -91,8 +91,8 @@ private object MetricsJsonCodecs extends JsonCodecs {
           "timeUnixNano" := histogram.timeWindow.end.toNanos.toString,
           "count" := histogram.stats.map(_.count.toString),
           "sum" := histogram.stats.map(_.sum),
-          "min" := histogram.stats.map(_.min),
-          "max" := histogram.stats.map(_.max),
+          "min" := histogram.stats.flatMap(_.min),
+          "max" := histogram.stats.flatMap(_.max),
           "bucketCounts" := histogram.counts.map(_.toString),
           "explicitBounds" := histogram.boundaries.boundaries,
           "exemplars" := (histogram.exemplars: Vector[ExemplarData])

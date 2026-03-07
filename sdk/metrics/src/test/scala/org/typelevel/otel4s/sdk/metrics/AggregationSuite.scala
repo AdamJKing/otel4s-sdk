@@ -34,7 +34,12 @@ class AggregationSuite extends DisciplineSuite {
         Gen.const(Aggregation.sum),
         Gen.const(Aggregation.lastValue),
         Gen.const(Aggregation.explicitBucketHistogram),
-        Gens.bucketBoundaries.map(Aggregation.explicitBucketHistogram)
+        for {
+          boundaries <- Gen.option(Gens.bucketBoundaries)
+          recordMinMax <- Gen.oneOf(true, false)
+        } yield Aggregation.explicitBucketHistogram(
+          ExplicitBucketHistogramOptions(boundaries, recordMinMax)
+        )
       )
     )
 
@@ -46,12 +51,12 @@ class AggregationSuite extends DisciplineSuite {
   test("Show[Aggregation]") {
     Prop.forAll(aggregationArbitrary.arbitrary) { aggregation =>
       val expected = aggregation match {
-        case Aggregation.Drop                                => "Aggregation.Drop"
-        case Aggregation.Default                             => "Aggregation.Default"
-        case Aggregation.Sum                                 => "Aggregation.Sum"
-        case Aggregation.LastValue                           => "Aggregation.LastValue"
-        case Aggregation.ExplicitBucketHistogram(boundaries) =>
-          s"Aggregation.ExplicitBucketHistogram{boundaries=$boundaries}"
+        case Aggregation.Drop                                              => "Aggregation.Drop"
+        case Aggregation.Default                                           => "Aggregation.Default"
+        case Aggregation.Sum                                               => "Aggregation.Sum"
+        case Aggregation.LastValue                                         => "Aggregation.LastValue"
+        case Aggregation.ExplicitBucketHistogram(boundaries, recordMinMax) =>
+          s"Aggregation.ExplicitBucketHistogram{boundaries=$boundaries, recordMinMax=$recordMinMax}"
       }
 
       assertEquals(Show[Aggregation].show(aggregation), expected)
@@ -98,7 +103,7 @@ class AggregationSuite extends DisciplineSuite {
           assert(!lastValue.compatibleWith(tpe))
         }
 
-      case bucket @ Aggregation.ExplicitBucketHistogram(_) =>
+      case bucket @ Aggregation.ExplicitBucketHistogram(_, _) =>
         val compatible: Set[InstrumentType] = Set(
           InstrumentType.Counter,
           InstrumentType.Histogram
@@ -110,6 +115,16 @@ class AggregationSuite extends DisciplineSuite {
           assert(!bucket.compatibleWith(tpe))
         }
     }
+  }
+
+  test("explicit bucket histogram options") {
+    val options = ExplicitBucketHistogramOptions.default.withRecordMinMax(false)
+    val aggregation = Aggregation.explicitBucketHistogram(options)
+
+    assertEquals(
+      aggregation.toString,
+      s"Aggregation.ExplicitBucketHistogram{boundaries=${Aggregation.Defaults.Boundaries}, recordMinMax=false}"
+    )
   }
 
 }

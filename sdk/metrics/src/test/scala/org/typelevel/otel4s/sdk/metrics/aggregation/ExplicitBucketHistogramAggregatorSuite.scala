@@ -62,7 +62,7 @@ class ExplicitBucketHistogramAggregatorSuite extends CatsEffectSuite with ScalaC
         val ctx = Context.root.updated(traceContextKey, traceContext)
 
         val aggregator =
-          ExplicitBucketHistogramAggregator[IO, Double](reservoirs, boundaries)
+          ExplicitBucketHistogramAggregator[IO, Double](reservoirs, boundaries, recordMinMax = true)
 
         val timeWindow =
           TimeWindow(100.millis, 200.millis)
@@ -133,7 +133,7 @@ class ExplicitBucketHistogramAggregatorSuite extends CatsEffectSuite with ScalaC
         val ctx = Context.root.updated(traceContextKey, traceContext)
 
         val aggregator =
-          ExplicitBucketHistogramAggregator[IO, Double](reservoirs, boundaries)
+          ExplicitBucketHistogramAggregator[IO, Double](reservoirs, boundaries, recordMinMax = true)
 
         val timeWindow =
           TimeWindow(100.millis, 200.millis)
@@ -204,7 +204,8 @@ class ExplicitBucketHistogramAggregatorSuite extends CatsEffectSuite with ScalaC
       val aggregator =
         ExplicitBucketHistogramAggregator[IO, Double](
           Reservoirs.alwaysOff,
-          boundaries
+          boundaries,
+          recordMinMax = true
         ).asInstanceOf[HistogramAggregator]
 
       val expected =
@@ -226,6 +227,37 @@ class ExplicitBucketHistogramAggregatorSuite extends CatsEffectSuite with ScalaC
           temporality
         )
       } yield assertEquals(metricData, expected)
+    }
+  }
+
+  test("aggregate with recordMinMax disabled") {
+    val boundaries = BucketBoundaries(0d, 10d)
+    val timeWindow = TimeWindow(100.millis, 200.millis)
+
+    Random.scalaUtilRandom[IO].flatMap { implicit R: Random[IO] =>
+      val aggregator =
+        ExplicitBucketHistogramAggregator[IO, Double](
+          reservoirs,
+          boundaries,
+          recordMinMax = false
+        )
+
+      TestControl.executeEmbed {
+        for {
+          accumulator <- aggregator.createAccumulator
+          _ <- accumulator.record(1d, org.typelevel.otel4s.Attributes.empty, Context.root)
+          _ <- accumulator.record(5d, org.typelevel.otel4s.Attributes.empty, Context.root)
+          _ <- accumulator.record(20d, org.typelevel.otel4s.Attributes.empty, Context.root)
+          point <- accumulator.aggregate(timeWindow, org.typelevel.otel4s.Attributes.empty, reset = true)
+        } yield {
+          assert(point.isDefined)
+          val histogram = point.get.asInstanceOf[PointData.Histogram]
+          assertEquals(histogram.stats.map(_.count), Some(3L))
+          assertEquals(histogram.stats.map(_.sum), Some(26d))
+          assertEquals(histogram.stats.flatMap(_.min), None)
+          assertEquals(histogram.stats.flatMap(_.max), None)
+        }
+      }
     }
   }
 

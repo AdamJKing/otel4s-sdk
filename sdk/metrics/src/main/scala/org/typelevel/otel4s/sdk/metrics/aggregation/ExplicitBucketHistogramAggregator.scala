@@ -49,7 +49,8 @@ private final class ExplicitBucketHistogramAggregator[
     A: MeasurementValue: Numeric
 ](
     reservoirs: Reservoirs[F],
-    boundaries: BucketBoundaries
+    boundaries: BucketBoundaries,
+    recordMinMax: Boolean
 ) extends Aggregator.Synchronous[F, A] {
   import ExplicitBucketHistogramAggregator._
 
@@ -59,7 +60,7 @@ private final class ExplicitBucketHistogramAggregator[
     for {
       state <- Concurrent[F].ref(emptyState(boundaries.length))
       reservoir <- reservoirs.histogramBucket(boundaries)
-    } yield new Accumulator(state, boundaries, reservoir)
+    } yield new Accumulator(state, boundaries, recordMinMax, reservoir)
 
   def toMetricData(
       resource: TelemetryResource,
@@ -98,9 +99,10 @@ private object ExplicitBucketHistogramAggregator {
     */
   def apply[F[_]: Concurrent, A: MeasurementValue: Numeric](
       reservoirs: Reservoirs[F],
-      boundaries: BucketBoundaries
+      boundaries: BucketBoundaries,
+      recordMinMax: Boolean
   ): Aggregator.Synchronous[F, A] =
-    new ExplicitBucketHistogramAggregator[F, A](reservoirs, boundaries)
+    new ExplicitBucketHistogramAggregator[F, A](reservoirs, boundaries, recordMinMax)
 
   private final case class State(
       sum: Double,
@@ -116,6 +118,7 @@ private object ExplicitBucketHistogramAggregator {
   private class Accumulator[F[_]: FlatMap, A: MeasurementValue](
       stateRef: Ref[F, State],
       boundaries: BucketBoundaries,
+      recordMinMax: Boolean,
       reservoir: ExemplarReservoir[F, A]
   ) extends Aggregator.Accumulator[F, A, PointData.Histogram] {
 
@@ -143,14 +146,17 @@ private object ExplicitBucketHistogramAggregator {
             )
           }
 
-          val stats = Option.when(state.count > 0) {
-            PointData.Histogram.Stats(
-              state.sum,
-              state.min,
-              state.max,
-              state.count
-            )
-          }
+          val stats =
+            Option.when(state.count > 0) {
+              if (recordMinMax)
+                PointData.Histogram.Stats(
+                  state.sum,
+                  state.min,
+                  state.max,
+                  state.count
+                )
+              else PointData.Histogram.Stats.withoutMinMax(state.sum, state.count)
+            }
 
           val histogram = PointData.histogram(
             timeWindow = timeWindow,
@@ -174,8 +180,8 @@ private object ExplicitBucketHistogramAggregator {
         val idx = bucketIndex(doubleValue)
         state.copy(
           sum = state.sum + doubleValue,
-          min = math.min(state.min, doubleValue),
-          max = math.max(state.max, doubleValue),
+          min = if (recordMinMax) math.min(state.min, doubleValue) else state.min,
+          max = if (recordMinMax) math.max(state.max, doubleValue) else state.max,
           count = state.count + 1,
           counts = state.counts.updated(idx, state.counts(idx) + 1)
         )

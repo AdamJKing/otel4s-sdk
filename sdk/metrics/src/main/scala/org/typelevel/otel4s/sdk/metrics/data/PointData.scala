@@ -123,10 +123,10 @@ object PointData {
       def sum: Double
 
       /** The min of all values in the histogram. */
-      def min: Double
+      def min: Option[Double]
 
       /** The max of all values in the histogram. */
-      def max: Double
+      def max: Option[Double]
 
       /** The total population of points in the histogram. */
       def count: Long
@@ -149,7 +149,12 @@ object PointData {
       /** Creates [[Stats]] with the given values.
         */
       def apply(sum: Double, min: Double, max: Double, count: Long): Stats =
-        Impl(sum, min, max, count)
+        Impl(sum, Some(min), Some(max), count)
+
+      /** Creates [[Stats]] without min and max values.
+        */
+      def withoutMinMax(sum: Double, count: Long): Stats =
+        Impl(sum, None, None, count)
 
       implicit val statsHash: Hash[Stats] =
         Hash.by(s => (s.sum, s.min, s.max, s.count))
@@ -161,8 +166,8 @@ object PointData {
 
       private final case class Impl(
           sum: Double,
-          min: Double,
-          max: Double,
+          min: Option[Double],
+          max: Option[Double],
           count: Long
       ) extends Stats
 

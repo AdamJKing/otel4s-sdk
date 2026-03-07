@@ -107,7 +107,7 @@ trait Cogens extends org.typelevel.otel4s.sdk.scalacheck.Cogens {
 
   implicit val histogramPointDataCogen: Cogen[PointData.Histogram] = {
     implicit val statsCogen: Cogen[PointData.Histogram.Stats] =
-      Cogen[(Double, Double, Double, Long)].contramap { s =>
+      Cogen[(Double, Option[Double], Option[Double], Long)].contramap { s =>
         (s.sum, s.min, s.max, s.count)
       }
 
