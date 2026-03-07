@@ -234,8 +234,11 @@ private[metrics] object Aggregator {
     def lastValue: Aggregator.Synchronous[F, A] =
       LastValueAggregator.synchronous(reservoirs, fixedReservoirSize)
 
-    def histogram(boundaries: BucketBoundaries): Aggregator.Synchronous[F, A] =
-      ExplicitBucketHistogramAggregator(reservoirs, boundaries)
+    def histogram(
+        boundaries: BucketBoundaries,
+        recordMinMax: Boolean
+    ): Aggregator.Synchronous[F, A] =
+      ExplicitBucketHistogramAggregator(reservoirs, boundaries, recordMinMax)
 
     aggregation match {
       case Aggregation.Default =>
@@ -248,14 +251,14 @@ private[metrics] object Aggregator {
               .flatMap(_.explicitBucketBoundaries)
               .getOrElse(Aggregation.Defaults.Boundaries)
 
-            histogram(boundaries)
+            histogram(boundaries, recordMinMax = true)
         }
 
       case Aggregation.Sum       => sum
       case Aggregation.LastValue => lastValue
 
-      case Aggregation.ExplicitBucketHistogram(boundaries) =>
-        histogram(boundaries)
+      case Aggregation.ExplicitBucketHistogram(boundaries, recordMinMax) =>
+        histogram(boundaries, recordMinMax)
     }
   }
 

@@ -166,15 +166,23 @@ trait Gens extends org.typelevel.otel4s.sdk.scalacheck.Gens {
     doubleNumberPointDataGen(Gen.double)
 
   val histogramPointData: Gen[PointData.Histogram] = {
-    def stats(values: List[Double]): Option[PointData.Histogram.Stats] =
-      Option.when(values.nonEmpty)(
-        PointData.Histogram.Stats(
-          sum = values.sum,
-          min = values.min,
-          max = values.max,
-          count = values.size.toLong
-        )
-      )
+    def stats(values: List[Double]): Gen[Option[PointData.Histogram.Stats]] =
+      if (values.nonEmpty)
+        Gen
+          .oneOf(
+            PointData.Histogram.Stats(
+              sum = values.sum,
+              min = values.min,
+              max = values.max,
+              count = values.size.toLong
+            ),
+            PointData.Histogram.Stats.withoutMinMax(
+              sum = values.sum,
+              count = values.size.toLong
+            )
+          )
+          .map(Some(_))
+      else Gen.const(None)
 
     def counts(
         values: List[Double],
@@ -219,11 +227,12 @@ trait Gens extends org.typelevel.otel4s.sdk.scalacheck.Gens {
       boundaries <- Gens.bucketBoundaries
       exemplars <- Gen.listOfN(boundaries.length + 1, Gens.doubleExemplarData)
       values <- Gen.listOfN(boundaries.length + 1, Gen.double)
+      histogramStats <- stats(values)
     } yield PointData.histogram(
       window,
       attributes,
       alignExemplars(values, boundaries, exemplars),
-      stats(values),
+      histogramStats,
       boundaries,
       counts(values, boundaries)
     )

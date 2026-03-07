@@ -48,7 +48,10 @@ class AggregatorSuite extends CatsEffectSuite with ScalaCheckEffectSuite {
       Gen.const(Aggregation.Default),
       Gen.const(Aggregation.Sum),
       Gen.const(Aggregation.LastValue),
-      Gens.bucketBoundaries.map(Aggregation.ExplicitBucketHistogram.apply)
+      for {
+        boundaries <- Gens.bucketBoundaries
+        recordMinMax <- Gen.oneOf(true, false)
+      } yield Aggregation.ExplicitBucketHistogram(boundaries, recordMinMax)
     )
 
   private val asynchronousAggregationGen: Gen[Aggregation.Asynchronous] =
@@ -113,7 +116,7 @@ class AggregatorSuite extends CatsEffectSuite with ScalaCheckEffectSuite {
             case Aggregation.LastValue =>
               numberPoints
 
-            case Aggregation.ExplicitBucketHistogram(boundaries) =>
+            case Aggregation.ExplicitBucketHistogram(boundaries, _) =>
               histogramPoints(boundaries)
           }
         }
@@ -146,9 +149,9 @@ class AggregatorSuite extends CatsEffectSuite with ScalaCheckEffectSuite {
                   histogram(Aggregation.Defaults.Boundaries)
               }
 
-            case Aggregation.Sum                        => sum
-            case Aggregation.LastValue                  => lastValue
-            case Aggregation.ExplicitBucketHistogram(b) => histogram(b)
+            case Aggregation.Sum                           => sum
+            case Aggregation.LastValue                     => lastValue
+            case Aggregation.ExplicitBucketHistogram(b, _) => histogram(b)
           }
 
           MetricData(

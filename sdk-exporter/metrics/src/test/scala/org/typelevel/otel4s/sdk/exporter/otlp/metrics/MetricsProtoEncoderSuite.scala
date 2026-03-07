@@ -92,8 +92,8 @@ class MetricsProtoEncoderSuite extends ScalaCheckSuite {
           "timeUnixNano" := point.timeWindow.end.toNanos.toString,
           "count" := point.stats.map(_.count.toString),
           "sum" := point.stats.map(_.sum),
-          "min" := point.stats.map(_.min),
-          "max" := point.stats.map(_.max),
+          "min" := point.stats.flatMap(_.min),
+          "max" := point.stats.flatMap(_.max),
           "bucketCounts" := point.counts.map(_.toString),
           "explicitBounds" := point.boundaries.boundaries,
           "exemplars" := (point.exemplars: Vector[ExemplarData])

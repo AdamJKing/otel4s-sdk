@@ -143,8 +143,8 @@ private object MetricsProtoEncoder {
       bucketCounts = point.counts,
       explicitBounds = point.boundaries.boundaries,
       exemplars = point.exemplars.map(ProtoEncoder.encode(_)),
-      min = point.stats.map(_.min),
-      max = point.stats.map(_.max)
+      min = point.stats.flatMap(_.min),
+      max = point.stats.flatMap(_.max)
     )
   }
 

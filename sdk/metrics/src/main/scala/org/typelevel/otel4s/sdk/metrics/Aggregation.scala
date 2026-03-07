@@ -92,7 +92,7 @@ object Aggregation {
     *   - [[org.typelevel.otel4s.metrics.Histogram Histogram]]
     */
   def explicitBucketHistogram: Aggregation =
-    ExplicitBucketHistogram(Defaults.Boundaries)
+    explicitBucketHistogram(ExplicitBucketHistogramOptions.default)
 
   /** Aggregates measurements into an explicit bucket
     * [[org.typelevel.otel4s.sdk.metrics.data.MetricPoints.Histogram MetricPoints.Histogram]] using the given bucket
@@ -105,20 +105,39 @@ object Aggregation {
     * @param boundaries
     *   the boundaries to use
     */
+  @deprecated("Use the overloaded variant that takes `ExplicitBucketHistogramOptions`", "0.17.0")
   def explicitBucketHistogram(boundaries: BucketBoundaries): Aggregation =
-    ExplicitBucketHistogram(boundaries)
+    explicitBucketHistogram(
+      ExplicitBucketHistogramOptions.default.withBucketBoundaries(boundaries)
+    )
+
+  /** Aggregates measurements into an explicit bucket
+    * [[org.typelevel.otel4s.sdk.metrics.data.MetricPoints.Histogram MetricPoints.Histogram]] using the options.
+    *
+    * Compatible instruments:
+    *   - [[org.typelevel.otel4s.metrics.Counter Counter]]
+    *   - [[org.typelevel.otel4s.metrics.Histogram Histogram]]
+    *
+    * @param options
+    *   the explicit bucket histogram options to use
+    */
+  def explicitBucketHistogram(options: ExplicitBucketHistogramOptions): Aggregation =
+    ExplicitBucketHistogram(
+      options.bucketBoundaries.getOrElse(Defaults.Boundaries),
+      options.recordMinMax
+    )
 
   implicit val aggregationHash: Hash[Aggregation] =
     Hash.fromUniversalHashCode
 
   implicit val aggregationShow: Show[Aggregation] =
     Show.show {
-      case Drop                                => "Aggregation.Drop"
-      case Default                             => "Aggregation.Default"
-      case Sum                                 => "Aggregation.Sum"
-      case LastValue                           => "Aggregation.LastValue"
-      case ExplicitBucketHistogram(boundaries) =>
-        show"Aggregation.ExplicitBucketHistogram{boundaries=$boundaries}"
+      case Drop                                              => "Aggregation.Drop"
+      case Default                                           => "Aggregation.Default"
+      case Sum                                               => "Aggregation.Sum"
+      case LastValue                                         => "Aggregation.LastValue"
+      case ExplicitBucketHistogram(boundaries, recordMinMax) =>
+        show"Aggregation.ExplicitBucketHistogram{boundaries=$boundaries, recordMinMax=$recordMinMax}"
     }
 
   private[metrics] sealed trait Synchronous { self: Aggregation => }
@@ -133,7 +152,8 @@ object Aggregation {
   private[metrics] case object LastValue extends Aggregation(Compatability.LastValue) with Synchronous with Asynchronous
 
   private[metrics] final case class ExplicitBucketHistogram(
-      boundaries: BucketBoundaries
+      boundaries: BucketBoundaries,
+      recordMinMax: Boolean
   ) extends Aggregation(Compatability.ExplicitBucketHistogram)
       with Synchronous
 
