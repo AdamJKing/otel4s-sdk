@@ -13,7 +13,7 @@ ThisBuild / developers := List(
 ThisBuild / startYear := Some(2022)
 
 // publish website from this branch
-ThisBuild / tlCiReleaseBranches := Seq("main", "update/sn-0.5")
+ThisBuild / tlCiReleaseBranches := Seq("main")
 ThisBuild / tlSitePublishBranch := Some("main")
 
 ThisBuild / resolvers += Resolver.sonatypeCentralSnapshots
@@ -81,14 +81,14 @@ ThisBuild / mergifyPrRules ++= Seq(
 )
 
 val CatsVersion = "2.13.0"
-val CatsEffectVersion = "3.7.0-RC1"
+val CatsEffectVersion = "3.7.0"
 val CatsMtlVersion = "1.6.0"
 val FS2Version = "3.13.0-M8"
-val MUnitVersion = "1.2.1"
+val MUnitVersion = "1.2.4"
 val MUnitScalaCheckVersion = "1.2.0"
-val MUnitCatsEffectVersion = "2.2.0-RC1"
+val MUnitCatsEffectVersion = "2.2.0"
 val MUnitDisciplineVersion = "2.0.0"
-val MUnitScalaCheckEffectVersion = "2.1.0-RC1"
+val MUnitScalaCheckEffectVersion = "2.1.0"
 val OpenTelemetryVersion = "1.60.0"
 val OpenTelemetryProtoVersion = "1.9.0-alpha"
 val ScodecVersion = "1.2.4"
@@ -99,7 +99,6 @@ val CaseInsensitiveVersion = "1.5.0"
 val ScalaJavaTimeVersion = "2.6.0"
 val ScribeVersion = "3.17.0"
 val Otel4sVersion = "0.16-83b6f7b-SNAPSHOT"
-val ProtobufJavaVersion = "3.25.8"
 
 lazy val scalaReflectDependency = Def.settings(
   libraryDependencies ++= {
@@ -377,10 +376,6 @@ lazy val `sdk-exporter-proto` =
         if (tlIsScala3.value) Nil
         else Seq("ch.epfl.scala" %% "scalafix-core" % _root_.scalafix.sbt.BuildInfo.scalafixVersion % ScalafixConfig)
       },
-      // we use old scalapb version because we cannot update to SN 0.5., so we explicitly define a newer version
-      libraryDependencies ++= Seq(
-        "com.google.protobuf" % "protobuf-java" % ProtobufJavaVersion,
-      ),
     )
 
 lazy val `sdk-exporter-common` =
