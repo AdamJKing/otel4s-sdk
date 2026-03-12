@@ -1,6 +1,6 @@
 import com.typesafe.tools.mima.core._
 
-ThisBuild / tlBaseVersion := "0.17"
+ThisBuild / tlBaseVersion := "0.18"
 
 ThisBuild / organization := "org.typelevel"
 ThisBuild / organizationName := "Typelevel"
@@ -13,7 +13,6 @@ ThisBuild / developers := List(
 ThisBuild / startYear := Some(2022)
 
 // publish website from this branch
-ThisBuild / tlCiReleaseBranches := Seq("main")
 ThisBuild / tlSitePublishBranch := Some("main")
 
 ThisBuild / resolvers += Resolver.sonatypeCentralSnapshots
